@@ -140,8 +140,8 @@ def update(value, hurdat_file, ax, fig):
 # Main Execution
 # ------------------------
 if __name__ == "__main__":
-    initial_year = 1851  # Change this to any year in the dataset
-    hurdat_file = "/home/jaredbaker/Documents/VSCode/Python/ESCI495/hurdat2-1851-2024-040425.txt"
+    initial_year = 1851  
+    hurdat_file = "/home/jaredbaker/Documents/VSCode/Python/ESCI495/hurdat2-1851-2024-040425.txt" # Change this to the correct filepath
 
     fig, ax = plt.subplots(figsize=(12, 9), subplot_kw={'projection': ccrs.PlateCarree()})
 
