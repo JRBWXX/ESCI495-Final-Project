@@ -62,6 +62,7 @@ def parse_hurdat2(filepath, selected_year):
                     lat_str = parts[4].strip()
                     lon_str = parts[5].strip()
                     wind_str = parts[6].strip()
+                    press_str = parts[7].strip()
 
                     try:
                         lat = float(lat_str[:-1]) * (1 if lat_str[-1] == 'N' else -1)
@@ -70,15 +71,19 @@ def parse_hurdat2(filepath, selected_year):
                         date = parts[0].strip()
                         time = parts[1].strip()
                         timestamp = f"{date} {time}"
+                        pressure = int(press_str)
+                        pressure = None if pressure == -999 else pressure
                         
                         storm_points.append({
                             "lat": lat, 
                             "lon": lon, 
                             "wind": wind,
+                            "pressure": pressure,
                             "timestamp": timestamp
                         })
                         
                     except ValueError:
+                        pressure = None
                         pass
 
                     i += 1
@@ -131,7 +136,8 @@ def plot_storms(storms, year, ax):
                 "timestamp": curr["timestamp"],
                 "name": storm["name"],
                 "lat": curr["lat"],
-                "lon": curr["lon"]
+                "lon": curr["lon"],
+                "pressure": curr["pressure"]
             })
             
         ax.text(
@@ -159,11 +165,15 @@ def on_hover(event, current_storms, ax, tooltip):
             if line.contains(event)[0]:
                 line.set_color("magenta")
                 
+                pressure = segment.get("pressure")
+                pres_txt = f'Pressure: {segment["pressure"]} hPa' if segment["pressure"] is not None else 'Pressure: N/A'
+                
                 tooltip.xy = (segment["lon"], segment["lat"])
                 tooltip.set_text(
                     f'{segment["name"]}\n'
                     f'{segment["timestamp"]}\n'
-                    f'Wind: {segment["wind"]} kts'
+                    f'Wind: {segment["wind"]} kts\n'
+                    f'{pres_txt}'
                 )
                 tooltip.set_visible(True)
                 found = True
@@ -194,7 +204,7 @@ def on_click(event, current_storms, ax, tooltip):
 # ------------------------
 # Slider Update
 # ------------------------
-def update(value, hurdat_file, ax, fig, events):
+def update(value, hurdat_file, ax, fig, events, tooltip):
     year = int(slider.val)
     data["storms"] = parse_hurdat2(hurdat_file, year)
     plot_storms(data["storms"], year, ax)
@@ -223,7 +233,7 @@ def update(value, hurdat_file, ax, fig, events):
 # ------------------------
 if __name__ == "__main__":
     initial_year = 1851  # Initial Year in the HURDAT2 Database
-    hurdat_file = "C:/Users/bake5721/Downloads/hurdat2-1851-2024-040425.txt"
+    hurdat_file = "/home/jaredbaker/Documents/VSCode/Python/ESCI495/hurdat2-1851-2024-040425.txt"
 
     fig, ax = plt.subplots(figsize=(12, 9), subplot_kw={'projection': ccrs.PlateCarree()})
     events = []
@@ -233,7 +243,7 @@ if __name__ == "__main__":
     
     ax_slider = plt.axes([0.1, 0.01, 0.8, 0.03], facecolor='lightgoldenrodyellow')
     slider = Slider(ax_slider, 'Year', 1851, 2024, valinit=initial_year, valstep=1)
-    slider.on_changed(lambda val: update(val, hurdat_file, ax, fig, events))
+    slider.on_changed(lambda val: update(val, hurdat_file, ax, fig, events, tooltip))
     
     hover_cid = fig.canvas.mpl_connect("motion_notify_event", lambda event: on_hover(event, data["storms"], ax, tooltip))
     click_cid = fig.canvas.mpl_connect("button_press_event", lambda event: on_click(event, data["storms"], ax, tooltip))
